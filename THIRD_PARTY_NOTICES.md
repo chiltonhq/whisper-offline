@@ -2,9 +2,14 @@
 
 Whisper Offline's own source code is MIT-licensed (see `LICENSE`). The packaged
 Windows app also includes the third-party software and model weights below, each
-distributed under its own license. Full license texts for the Python packages
-are included inside the app under `_internal\` (in each package's
-`*.dist-info` folder) and at the linked project pages.
+distributed under its own license.
+
+Full license texts are in the [`licenses/`](licenses/) folder, which is copied
+into every build as `WhisperOffline\licenses\` (see `licenses/README.txt` for
+which file covers which component). Built copies also get
+`licenses\packages\`, which holds the license files of every Conda and pip
+package in the build environment, including the smaller dependencies not
+listed here.
 
 ## Models (bundled under `_internal\models\`)
 

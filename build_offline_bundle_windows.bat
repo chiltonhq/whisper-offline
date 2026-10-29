@@ -79,6 +79,12 @@ copy /y "launcher\Start Whisper Offline.bat" "%APP%\" >nul
 copy /y "launcher\README_FIRST.txt" "%APP%\" >nul
 copy /y LICENSE "%APP%\LICENSE.txt" >nul
 copy /y THIRD_PARTY_NOTICES.md "%APP%\THIRD_PARTY_NOTICES.txt" >nul
+xcopy /e /i /y /q licenses "%APP%\licenses" >nul
+call conda run -n "%ENV_NAME%" python collect_licenses.py "%APP%\licenses\packages"
+if errorlevel 1 (
+  echo WARNING: could not collect package license files into %APP%\licenses\packages.
+  echo Fix this before publishing a release.
+)
 
 echo.
 echo Build complete.

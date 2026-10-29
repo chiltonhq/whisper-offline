@@ -175,6 +175,8 @@ You should see exactly one result, at `_internal\libiomp5md.dll`.
 | `build_offline_bundle_windows.bat` | One-command build: environment, preflight, model download, packaging |
 | `package_release.ps1` | Zips and splits the build into GitHub Release files |
 | `launcher/` | `Start Whisper Offline.bat` and `README_FIRST.txt`, copied into every build |
+| `licenses/` | Full license texts for bundled software and models, copied into every build |
+| `collect_licenses.py` | Build step that copies every bundled package's license file into the app |
 | `environment_offline.yml` | Pinned Conda and pip dependencies |
 | `assets/` | App icon and the script that generates it |
 | `architecture.md` | How it works, and the lessons learned along the way |
@@ -185,7 +187,7 @@ Build output (`build/`, `dist/`, `release/`) and downloaded models (`models/`) a
 
 Whisper Offline's own code is released under the [MIT License](LICENSE).
 
-The download bundles third-party software and models under their own licenses, all of which allow free use and redistribution. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Highlights:
+The download bundles third-party software and models under their own licenses, all of which allow free use and redistribution. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the list and [licenses/](licenses/) for the full texts, which also ship inside the app. Highlights:
 
 - Whisper models by OpenAI (MIT), converted by SYSTRAN for faster-whisper (MIT)
 - pyannote.audio and its diarization and segmentation models (MIT)
