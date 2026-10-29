@@ -55,7 +55,10 @@ FINISHED_RE = re.compile(r"^Finished:\s*(.+)$")
 
 def _app_icon_path() -> Path | None:
     base = runtime_base_dir()
-    for candidate in (base / "assets" / "app_icon.png", base.parent / "assets" / "app_icon.png"):
+    # In the packaged app, PyInstaller puts bundled data under _internal\
+    # (sys._MEIPASS), not next to the exe.
+    bundle = Path(getattr(sys, "_MEIPASS", base))
+    for candidate in (bundle / "assets" / "app_icon.png", base / "assets" / "app_icon.png", base.parent / "assets" / "app_icon.png"):
         if candidate.exists():
             return candidate
     return None

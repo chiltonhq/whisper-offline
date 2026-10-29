@@ -4,7 +4,7 @@
 
 > **Just want to use it?** Skip the code on this page and go to [**Download and install**](#download-and-install). The app comes from the [Releases](../../releases/latest) page, not from the green *Code* button.
 
-<!-- Screenshot: save one as docs/screenshot.png, then replace this comment with: ![Whisper Offline](docs/screenshot.png) -->
+![Whisper Offline](docs/screenshot.png)
 
 Whisper Offline packages OpenAI's [Whisper](https://github.com/openai/whisper) speech recognition model (through [faster-whisper](https://github.com/SYSTRAN/faster-whisper)) and [pyannote](https://github.com/pyannote/pyannote-audio) speaker diarization into a single Windows folder. All the AI models are included in the download, so it works on air-gapped and locked-down machines, and your audio never leaves your computer.
 
