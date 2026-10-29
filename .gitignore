@@ -1,0 +1,20 @@
+# Build output
+build/
+dist/
+release/
+
+# Downloaded models (fetched by build_offline_bundle_windows.bat)
+models/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Local tooling / scratch
+.claude/
+dev/
+
+# OS
+Thumbs.db
+.DS_Store
