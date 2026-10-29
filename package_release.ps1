@@ -39,15 +39,15 @@ if (-not (Test-Path -LiteralPath (Join-Path $appDir "WhisperOffline.exe"))) {
 Remove-Item -LiteralPath (Join-Path $appDir "_internal\.setup_done") -Force -ErrorAction SilentlyContinue
 $internal = Get-Item -LiteralPath (Join-Path $appDir "_internal") -Force
 $internal.Attributes = $internal.Attributes -band (-bnot [System.IO.FileAttributes]::Hidden)
-Get-ChildItem -LiteralPath (Join-Path $appDir "processed") -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+Remove-Item -LiteralPath (Join-Path $appDir "processed") -Recurse -Force -ErrorAction SilentlyContinue
 Get-ChildItem -LiteralPath (Join-Path $appDir "DropAudioHere") -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 
 if (Test-Path -LiteralPath $outDir) { Remove-Item -LiteralPath $outDir -Recurse -Force }
 New-Item -ItemType Directory -Path $outDir | Out-Null
 
 # Zip with .NET (supports files over 2 GB, unlike Compress-Archive on PowerShell 5.1).
-# Keep the empty DropAudioHere/processed folders in the zip by adding a placeholder.
-foreach ($sub in "DropAudioHere", "processed") {
+# Keep the empty DropAudioHere folder in the zip by adding a placeholder.
+foreach ($sub in @("DropAudioHere")) {
     Set-Content -LiteralPath (Join-Path $appDir "$sub\.keep") -Value "" -Encoding ascii
 }
 Write-Host "Zipping $appDir (this takes a while)..."
@@ -123,7 +123,7 @@ pause
     $assets += "Combine-WhisperOffline.bat"
 }
 
-foreach ($sub in "DropAudioHere", "processed") {
+foreach ($sub in @("DropAudioHere")) {
     Remove-Item -LiteralPath (Join-Path $appDir "$sub\.keep") -ErrorAction SilentlyContinue
 }
 

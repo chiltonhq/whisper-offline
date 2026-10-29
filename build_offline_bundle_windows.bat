@@ -74,7 +74,6 @@ if errorlevel 1 exit /b 1
 
 set "APP=dist\WhisperOffline"
 mkdir "%APP%\DropAudioHere" 2>nul
-mkdir "%APP%\processed" 2>nul
 copy /y "packaging\README_FIRST.txt" "%APP%\" >nul
 xcopy /e /i /y /q licenses "%APP%\licenses" >nul
 copy /y LICENSE "%APP%\licenses\LICENSE.txt" >nul

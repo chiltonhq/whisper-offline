@@ -53,7 +53,7 @@ audio file ──▶ faster-whisper (word_timestamps=True)  ──▶  segments 
               [HH:MM:SS-HH:MM:SS] SPEAKER_01: "..."
                     │
                     ▼
-                processed/*.txt
+        Documents\Whisper Offline\*.txt
 ```
 
 Two independent passes over the audio, then a merge step that assigns each transcription segment to whichever speaker was talking the most during that time window. See `apply_speaker_labels` in `offline_transcribe.py`.
@@ -118,7 +118,7 @@ The `whisper_offline.spec` file is the recipe. Three things to know:
 │  2. download 6 models     │                │   2. Run the .exe       │
 │  3. preflight checks      │ GitHub Release │   3. Drop audio in      │
 │  4. PyInstaller package   │  ───────────▶  │      DropAudioHere/     │
-│  5. package_release.ps1   │                │   4. Read processed/    │
+│  5. package_release.ps1   │                │   4. Open transcripts   │
 │                           │                │                         │
 └───────────────────────────┘                └─────────────────────────┘
 ```
@@ -206,17 +206,27 @@ If you want to read the code in 10 minutes, in this order:
 
 ## 10. Runtime configuration
 
-Two configuration files that the user can edit on the offline machine without
-rebuilding:
+Settings the user (or IT) can change without rebuilding:
 
-- **`output_path.txt`** (next to the `.exe`)
-  Single-line file containing the destination folder for processed audio +
-  transcripts. Optional and not shipped by default, so output goes to the
-  local `processed\` folder unless the user creates it. At launch the GUI calls
-  `Path(text).mkdir(parents=True, exist_ok=True)`; if that succeeds the
-  configured path is used, otherwise the GUI falls back to the local
-  `processed\` folder and surfaces the reason in the progress log. The
-  "Open Output Folder" button follows the resolved path automatically.
+- **Output folder.** At launch the GUI picks the first usable folder, creating
+  it with `mkdir(parents=True, exist_ok=True)`:
+  1. the folder chosen with **Change…** in the main window, remembered via
+     `QSettings` (stored under `HKCU\Software\WhisperOffline`)
+  2. the path in **`output_path.txt`** next to the `.exe`, a single-line file
+     for IT-managed installs (for example a network share). Not shipped by
+     default.
+  3. `Documents\Whisper Offline`, the default (Qt resolves Documents, so
+     OneDrive-redirected folders work)
+  4. a `processed\` folder inside the app folder, as a last resort
+
+  Any candidate that can't be created is skipped, and the reason is shown in
+  the progress log.
+
+- **Audio files stay put.** Transcripts are written straight into the output
+  folder. Audio the user adds with Add Files or Add Folder is never moved.
+  Only audio queued from `DropAudioHere\` is moved into the output folder
+  afterward, so it isn't queued again on the next launch. Name clashes get a
+  ` (2)` suffix instead of overwriting.
 
   Failure mode worth knowing: resolution happens once, at startup. If the
   network share disconnects mid-session, in-flight transcriptions fail per

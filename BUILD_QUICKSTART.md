@@ -35,7 +35,7 @@ This creates or updates the Conda environment, runs preflight checks, downloads 
 
 1. Double-click `dist\WhisperOffline\WhisperOffline.exe` and check that "Whisper Offline" shortcuts appear on the desktop and in the Start menu
 2. Add a short audio clip and click **Start** with each model quality
-3. Confirm a `*_transcription.txt` with speaker labels appears in `processed`
+3. Click **Open** next to "Save transcripts to" and confirm a `*_transcription.txt` with speaker labels is in `Documents\Whisper Offline`
 4. Confirm `dist\WhisperOffline\licenses\packages\conda` and `...\packages\pip` contain license folders (the build prints a warning if not)
 5. Optional: disconnect from the internet and repeat, to confirm it works fully offline
 

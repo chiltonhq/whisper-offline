@@ -17,15 +17,17 @@ internet: your recordings and transcripts never leave this machine.
 3) Pick a model quality (large = more accurate, medium = faster), then
    click Start.
 
-4) Transcripts appear in the "processed" folder ("Open Output Folder" button).
-   The original audio files are moved there too.
+4) Transcripts are saved to Documents\Whisper Offline. Click "Open" next to
+   "Save transcripts to" to see them, or "Change..." to pick another folder.
+   Your original audio files are left where they are (files from
+   DropAudioHere are moved into the transcripts folder once done).
 
 Supported file types: .mp3 .mp4 .mpeg .mpga .m4a .wav .webm
 
 Transcript format:
   [00:01:12-00:01:18] SPEAKER_01: Example transcript line
 
-Optional: to save transcripts somewhere else, create a file named
+For IT: to set a default save folder for all users, create a file named
 output_path.txt next to WhisperOffline.exe containing one line with the
 folder path, for example:  D:\Transcripts
 

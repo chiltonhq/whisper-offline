@@ -49,7 +49,6 @@ WhisperOffline\
   WhisperOffline.exe    <- double-click this
   README_FIRST.txt      quick-start guide
   DropAudioHere\        optional: audio placed here is queued at startup
-  processed\            your transcripts appear here
   licenses\             open-source licenses
 ```
 
@@ -66,11 +65,11 @@ WhisperOffline\
 3. Choose **Model quality**: `large` for best accuracy, `medium` for speed.
 4. Optionally tick **Translate non-English to English**.
 5. Click **Start** and watch the progress bar and log.
-6. Click **Open Output Folder** to see the results.
+6. Click **Open** next to *Save transcripts to* to see the results.
 
-Each transcript is saved as `<audio file name>_transcription.txt` in the `processed` folder, and the original audio file is moved there too.
+Transcripts are saved to **`Documents\Whisper Offline`** as `<audio file name>_transcription.txt`. To save them somewhere else, click **Change…**; the app remembers your choice. Your original audio files are left where they are. The exception is files from `DropAudioHere`, which are moved into the transcripts folder when done so they aren't queued again.
 
-**Saving to a different folder:** create a text file named `output_path.txt` next to `WhisperOffline.exe` containing a single folder path (for example `D:\Transcripts`). If that folder can't be used, the app falls back to `processed` and says why in the log.
+**For IT-managed installs:** to set a default save folder for everyone (for example a network share), put a text file named `output_path.txt` next to `WhisperOffline.exe` containing a single folder path, such as `D:\Transcripts`. A user's own **Change…** choice still takes priority. If a folder can't be used, the app falls back to the next option and says why in the log.
 
 **Speed:** transcription runs on the CPU. As a rough guide, `medium` takes well under the length of the recording on a modern laptop, and `large` takes longer. A fast CPU and an SSD make the biggest difference.
 
@@ -81,7 +80,7 @@ Offline operation is built into the app, not left to a setting:
 - **All models are bundled.** Two Whisper models and four diarization models are downloaded once at *build* time and shipped inside `WhisperOffline\_internal\models\`.
 - **The network layer is switched off.** Before any Hugging Face library loads, the app sets `HF_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1` and `HF_HUB_DISABLE_TELEMETRY=1`, so the model libraries refuse to make network requests.
 - **No remote model IDs at runtime.** pyannote's pipeline config normally names models by Hugging Face repo ID, which would trigger a download. The app rewrites that config in memory to point at the bundled local copies before loading it.
-- **Your data stays put.** Audio is read from where you choose and transcripts are written to the local `processed` folder, or your `output_path.txt` location. Nothing is uploaded or logged anywhere else.
+- **Your data stays put.** Audio is read from where you choose and left there, and transcripts are written to a local folder you control (`Documents\Whisper Offline` by default). Nothing is uploaded or logged anywhere else.
 - **Patched media decoder.** Audio is decoded by PyAV, which bundles FFmpeg's libraries. No system `ffmpeg` is used. `av` is pinned to `17.1.0` (FFmpeg 8.1.1), which includes the June 2026 FFmpeg security fixes.
 
 The only part of this project that uses the internet is the **build script**, which downloads dependencies and models on the developer's machine.

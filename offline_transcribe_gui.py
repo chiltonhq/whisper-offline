@@ -6,7 +6,7 @@ import sys
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal, QUrl, Qt
+from PySide6.QtCore import QSettings, QStandardPaths, QThread, Signal, QUrl, Qt
 from PySide6.QtGui import QDesktopServices, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QComboBox,
     QPlainTextEdit,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -66,12 +67,25 @@ class TranscribeWorker(QThread):
     log = Signal(str)
     done = Signal()
 
-    def __init__(self, files: list[Path], quality: str, processed_dir: Path, translate: bool = False):
+    def __init__(
+        self,
+        files: list[Path],
+        quality: str,
+        processed_dir: Path,
+        translate: bool = False,
+        drop_dirs: tuple[Path, ...] = (),
+    ):
         super().__init__()
         self.files = files
         self.quality = quality
         self.processed_dir = processed_dir
         self.translate = translate
+        self.drop_dirs = drop_dirs
+
+    def _should_move_audio(self, audio_path: Path) -> bool:
+        # Only audio that came from DropAudioHere is moved out (so it isn't
+        # queued again next launch). Files the user picked stay where they are.
+        return audio_path.resolve().parent in self.drop_dirs
 
     def run(self) -> None:
         try:
@@ -89,6 +103,7 @@ class TranscribeWorker(QThread):
                 language=None,
                 logger=self.log.emit,
                 task="translate" if self.translate else "transcribe",
+                move_audio=self._should_move_audio,
             )
             self.log.emit("All queued files finished.")
         except Exception as exc:
@@ -104,6 +119,12 @@ class MainWindow(QMainWindow):
         self.resize(1100, 760)
 
         self.base_dir = runtime_base_dir()
+        self.settings = QSettings("WhisperOffline", "Whisper Offline")
+        self.drop_dirs = tuple(
+            d.resolve()
+            for d in (self.base_dir / "DropAudioHere", self.base_dir.parent / "DropAudioHere")
+            if d.is_dir()
+        )
         self.processed_dir, self._output_log_message = self._resolve_processed_dir()
 
         self.file_paths: list[Path] = []
@@ -118,33 +139,47 @@ class MainWindow(QMainWindow):
         self._load_startup_files()
 
     def _resolve_processed_dir(self) -> tuple[Path, str]:
-        outer_dir = self.base_dir.parent
+        """Pick where transcripts go, first usable of:
 
-        if (outer_dir / "DropAudioHere").exists():
-            default_dir = outer_dir / "processed"
-        else:
-            default_dir = self.base_dir / "processed"
+        1. the folder the user chose with "Change..." (remembered)
+        2. a path in output_path.txt next to the app (for IT-managed installs)
+        3. Documents\\Whisper Offline
+        4. a "processed" folder inside the app folder, as a last resort
+        """
+        candidates: list[tuple[Path, str]] = []
 
-        for config_path in (self.base_dir / "output_path.txt", outer_dir / "output_path.txt"):
-            if not config_path.exists():
-                continue
+        saved = self.settings.value("output_dir", "", type=str)
+        if saved:
+            candidates.append((Path(saved), "your saved choice"))
+
+        for config_path in (self.base_dir / "output_path.txt", self.base_dir.parent / "output_path.txt"):
             try:
                 text = config_path.read_text(encoding="utf-8").strip()
             except OSError:
                 continue
-            if not text:
-                continue
-            configured = Path(text)
-            try:
-                configured.mkdir(parents=True, exist_ok=True)
-            except OSError as exc:
-                return default_dir, (
-                    f"Output folder: {default_dir} "
-                    f"(configured path '{configured}' unavailable: {exc})"
-                )
-            return configured, f"Output folder: {configured}"
+            if text:
+                candidates.append((Path(text), config_path.name))
+                break
 
-        return default_dir, f"Output folder: {default_dir}"
+        documents = QStandardPaths.writableLocation(QStandardPaths.DocumentsLocation)
+        if documents:
+            candidates.append((Path(documents) / "Whisper Offline", "default"))
+        candidates.append((self.base_dir / "processed", "fallback"))
+
+        problems: list[str] = []
+        for folder, source in candidates:
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                problems.append(f"{folder} ({source}) is unavailable: {exc}")
+                continue
+            message = f"Transcripts will be saved to: {folder}"
+            if problems:
+                message += "\n  " + "\n  ".join(problems)
+            return folder, message
+
+        # Every candidate failed; report the last one and let saving surface the error.
+        return candidates[-1][0], "Could not create an output folder:\n  " + "\n  ".join(problems)
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -203,6 +238,24 @@ class MainWindow(QMainWindow):
         top_controls.addStretch(1)
         root.addLayout(top_controls)
 
+        output_row = QHBoxLayout()
+        output_row.setSpacing(10)
+        output_row.addWidget(QLabel("Save transcripts to:"))
+        self.output_label = QLabel()
+        self.output_label.setObjectName("outputPath")
+        self.output_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        # Let a long path be clipped instead of forcing the window wider.
+        self.output_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        output_row.addWidget(self.output_label, 1)
+        self.change_output_btn = QPushButton("Change…")
+        self.open_output_btn = QPushButton("Open")
+        self.change_output_btn.clicked.connect(self._change_output_folder)
+        self.open_output_btn.clicked.connect(self._open_output_folder)
+        output_row.addWidget(self.change_output_btn)
+        output_row.addWidget(self.open_output_btn)
+        root.addLayout(output_row)
+        self._show_output_dir()
+
         queued_label = QLabel("Queued files")
         queued_label.setObjectName("section")
         root.addWidget(queued_label)
@@ -214,20 +267,17 @@ class MainWindow(QMainWindow):
         self.add_files_btn = QPushButton("Add Files")
         self.add_folder_btn = QPushButton("Add Folder")
         self.clear_btn = QPushButton("Clear")
-        self.open_output_btn = QPushButton("Open Output Folder")
         self.start_btn = QPushButton("Start")
         self.start_btn.setObjectName("startBtn")
 
         self.add_files_btn.clicked.connect(self._pick_files)
         self.add_folder_btn.clicked.connect(self._pick_folder)
         self.clear_btn.clicked.connect(self._clear_files)
-        self.open_output_btn.clicked.connect(self._open_output_folder)
         self.start_btn.clicked.connect(self._start)
 
         buttons.addWidget(self.add_files_btn)
         buttons.addWidget(self.add_folder_btn)
         buttons.addWidget(self.clear_btn)
-        buttons.addWidget(self.open_output_btn)
         buttons.addStretch(1)
         buttons.addWidget(self.start_btn)
         root.addLayout(buttons)
@@ -332,6 +382,10 @@ class MainWindow(QMainWindow):
             QLabel#eta {{
                 font-size: 13px;
                 color: {THEME_MUTED};
+            }}
+            QLabel#outputPath {{
+                color: {THEME_TEXT};
+                font-weight: 600;
             }}
             QPushButton {{
                 background: {THEME_BLUE_LIGHT};
@@ -471,6 +525,21 @@ class MainWindow(QMainWindow):
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.processed_dir)))
 
+    def _show_output_dir(self) -> None:
+        self.output_label.setText(str(self.processed_dir))
+        self.output_label.setToolTip(str(self.processed_dir))
+
+    def _change_output_folder(self) -> None:
+        folder = QFileDialog.getExistingDirectory(
+            self, "Choose where to save transcripts", str(self.processed_dir)
+        )
+        if not folder:
+            return
+        self.processed_dir = Path(folder)
+        self.settings.setValue("output_dir", str(self.processed_dir))
+        self._show_output_dir()
+        self._log(f"Transcripts will be saved to: {self.processed_dir}")
+
     def _set_busy(self, busy: bool) -> None:
         self.add_files_btn.setDisabled(busy)
         self.add_folder_btn.setDisabled(busy)
@@ -478,6 +547,7 @@ class MainWindow(QMainWindow):
         self.start_btn.setDisabled(busy)
         self.quality.setDisabled(busy)
         self.translate_checkbox.setDisabled(busy)
+        self.change_output_btn.setDisabled(busy)
 
     def _start(self) -> None:
         if self.worker and self.worker.isRunning():
@@ -503,6 +573,7 @@ class MainWindow(QMainWindow):
             quality,
             self.processed_dir,
             translate=self.translate_checkbox.isChecked(),
+            drop_dirs=self.drop_dirs,
         )
         self.worker.log.connect(self._log)
         self.worker.done.connect(self._finish_run)
@@ -516,13 +587,8 @@ class MainWindow(QMainWindow):
         self._clear_files()
 
     def _load_startup_files(self) -> None:
-        for folder in [
-            self.base_dir / "DropAudioHere",
-            self.base_dir.parent / "DropAudioHere",
-            self.base_dir,
-        ]:
-            if folder.exists():
-                self._add_paths([p for p in sorted(folder.iterdir()) if p.is_file()])
+        for folder in self.drop_dirs:
+            self._add_paths([p for p in sorted(folder.iterdir()) if p.is_file()])
 
 
 def main() -> int:

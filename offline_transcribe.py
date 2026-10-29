@@ -511,6 +511,18 @@ def transcribe_one(
     return build_timestamped_transcript(seg_rows)
 
 
+def _unique_path(path: Path) -> Path:
+    """Return path, or "name (2).ext", "name (3).ext"... if it already exists."""
+    if not path.exists():
+        return path
+    n = 2
+    while True:
+        candidate = path.with_name(f"{path.stem} ({n}){path.suffix}")
+        if not candidate.exists():
+            return candidate
+        n += 1
+
+
 def process_audio_files(
     model: WhisperModel,
     audio_files: Iterable[Path],
@@ -518,7 +530,14 @@ def process_audio_files(
     language: str | None,
     logger: Logger = print,
     task: str = "transcribe",
+    move_audio: Callable[[Path], bool] | None = None,
 ) -> int:
+    """Transcribe each file and write its transcript into processed_dir.
+
+    move_audio decides, per file, whether the audio is moved into
+    processed_dir once transcribed (so a watched input folder doesn't queue it
+    again). By default every file is moved, which is what the CLI expects.
+    """
     processed_dir.mkdir(parents=True, exist_ok=True)
     processed_count = 0
 
@@ -548,12 +567,13 @@ def process_audio_files(
                 task=task,
             )
 
-            txt_path = audio_path.parent / f"{audio_path.name}_transcription.txt"
+            txt_path = _unique_path(processed_dir / f"{audio_path.name}_transcription.txt")
             txt_path.write_text(text, encoding="utf-8")
 
-            shutil.move(str(audio_path), str(processed_dir / audio_path.name))
-            shutil.move(str(txt_path), str(processed_dir / txt_path.name))
+            if move_audio is None or move_audio(audio_path):
+                shutil.move(str(audio_path), str(_unique_path(processed_dir / audio_path.name)))
 
+            logger(f"Saved: {txt_path.name}")
             logger(f"Finished: {audio_path.name}")
             processed_count += 1
         except Exception as exc:
