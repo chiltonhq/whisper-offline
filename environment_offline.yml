@@ -11,6 +11,9 @@ dependencies:
   - huggingface_hub=0.30.2
   - pyinstaller=6.14.2
   - matplotlib
+  # zlibwapi.dll for the optional GPU add-on: cuDNN 8.9 on Windows loads it
+  # at runtime. Only copied into the add-on, never into the main app.
+  - conda-forge::zlib-wapi=1.3.2
   - pip
   - pip:
       - setuptools<81

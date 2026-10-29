@@ -175,6 +175,26 @@ A short tour of bugs we hit. Each one is a generally-useful lesson:
   `Zone.Identifier` stream from every app file. Code-signing is
   the "real" fix but costs money for a certificate.
 
+- **Hyper-Threading doesn't help Whisper.** faster-whisper defaults to 4 CPU
+  threads. On a 4-core/8-thread Xeon, 8 threads ran large-v3 31% *slower*
+  than 4 (186 s vs 142 s for a 2-minute clip). The app uses one thread per
+  physical core, from PyTorch's core count.
+
+- **Two copies of the same DLL name, two cuDNN versions.** For the optional
+  GPU add-on, CTranslate2 4.3.1 needs cuBLAS 12 and cuDNN 8. Its wheel ships
+  a `cudnn64_8.dll` loader (with stale "CUDA 6.5" version metadata, so its
+  exact cuDNN build is unknown), and `ctranslate2/__init__.py` loads every DLL
+  in its folder by full path. cuDNN refuses to mix a loader and libraries
+  from different versions. The fix: `offline_transcribe.py` loads the
+  add-on's 8.9.7 `cudnn64_8.dll` *before* importing ctranslate2. Windows
+  resolves `ctranslate2.dll`'s import of `cudnn64_8.dll` to the module
+  already loaded under that name. This was confirmed by reading
+  `ctranslate2.dll`'s import address table at runtime: with the preload, its
+  cuDNN calls go to the add-on's copy. cuDNN 8.9 on Windows also needs
+  `zlibwapi.dll`, which isn't in NVIDIA's wheel, so the add-on bundles
+  conda-forge's build. Removing ctranslate2's own copy isn't an option:
+  `ctranslate2.dll` imports it statically and won't load without it.
+
 **Meta-lesson:** the last 10% of "make it work everywhere" is where you spend 50% of the time.
 
 ---
@@ -201,6 +221,7 @@ If you want to read the code in 10 minutes, in this order:
 | `whisper_offline.spec` | ~125 | PyInstaller recipe (now also bundles `assets/app_icon.png` and embeds `app_icon.ico` into the .exe) |
 | `build_offline_bundle_windows.bat` | ~90 | Build orchestration (copies `packaging/README_FIRST.txt`, the licenses and notices into each bundle) |
 | `package_release.ps1` | ~130 | Zips the bundle and splits it into <2 GB parts for GitHub Releases |
+| `build_gpu_addon.ps1` | ~120 | Builds the optional NVIDIA GPU add-on (cuBLAS + cuDNN + zlibwapi) |
 | `assets/make_icon.py` | ~50 | One-shot generator for the waveform app icon (run once at dev time) |
 | `environment_offline.yml` | ~20 | Pinned dependencies |
 

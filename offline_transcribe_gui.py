@@ -34,6 +34,7 @@ from offline_transcribe import (
     load_model,
     model_dir_for_quality,
     process_audio_files,
+    processing_device_summary,
     runtime_base_dir,
 )
 
@@ -102,7 +103,7 @@ class TranscribeWorker(QThread):
                 return
 
             self.log.emit(f"Loading model ({self.quality}) from: {model_dir}")
-            model = load_model(model_dir, compute_type="int8")
+            model = load_model(model_dir, logger=self.log.emit)
             process_audio_files(
                 model=model,
                 audio_files=self.files,
@@ -249,6 +250,13 @@ class MainWindow(QMainWindow):
         )
         top_controls.addWidget(self.translate_checkbox)
         top_controls.addStretch(1)
+        self.device_label = QLabel(f"Runs on: {processing_device_summary()}")
+        self.device_label.setObjectName("device")
+        self.device_label.setToolTip(
+            "Whisper Offline uses an NVIDIA GPU when the optional GPU add-on is\n"
+            "installed (a 'gpu' folder next to WhisperOffline.exe). Otherwise it uses the CPU."
+        )
+        top_controls.addWidget(self.device_label)
         root.addLayout(top_controls)
 
         output_row = QHBoxLayout()
@@ -394,6 +402,10 @@ class MainWindow(QMainWindow):
             }}
             QLabel#eta {{
                 font-size: 13px;
+                color: {THEME_MUTED};
+            }}
+            QLabel#device {{
+                font-size: 12px;
                 color: {THEME_MUTED};
             }}
             QLabel#outputPath {{
