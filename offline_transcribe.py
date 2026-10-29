@@ -23,6 +23,7 @@ MODEL_BY_QUALITY = {
     "large": "faster-whisper-large-v3",
     "medium": "faster-whisper-medium",
 }
+DEFAULT_QUALITY = "large"
 DIARIZATION_MODEL_NAME = "pyannote-speaker-diarization-3.1"
 DIARIZATION_DEPENDENCY_DIRS = {
     "pyannote/segmentation-3.0": "pyannote-segmentation-3.0",
@@ -611,7 +612,17 @@ def main() -> int:
         default=None,
         help="Local CTranslate2 Whisper model directory (optional; auto-detected if omitted)",
     )
-    parser.add_argument("--quality", choices=["medium", "large"], default="large", help="Model quality")
+    parser.add_argument(
+        "--quality",
+        choices=list(MODEL_BY_QUALITY),
+        default=DEFAULT_QUALITY,
+        help="large (most accurate) or medium (faster)",
+    )
+    parser.add_argument(
+        "--translate",
+        action="store_true",
+        help="Translate non-English speech to English",
+    )
     parser.add_argument("--language", default=None, help="Optional language code, e.g. en")
     parser.add_argument("--compute-type", default="int8", help="faster-whisper compute type, e.g. int8, float16")
 
@@ -649,6 +660,7 @@ def main() -> int:
         processed_dir=processed_dir,
         language=args.language,
         logger=print,
+        task="translate" if args.translate else "transcribe",
     )
     return 0
 

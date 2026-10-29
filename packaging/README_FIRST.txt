@@ -14,8 +14,13 @@ internet: your recordings and transcripts never leave this machine.
 2) Add audio with "Add Files" or "Add Folder", or put files in the
    DropAudioHere folder before you start the app.
 
-3) Pick a model quality (large = more accurate, medium = faster), then
-   click Start.
+3) Pick a model, then click Start:
+     Large  - most accurate (about 1.7x the recording's length on 4 cores)
+     Medium - faster, a little less accurate (about 1.4x)
+
+   To get the transcript in English when people speak another language,
+   tick "Translate non-English speech to English". It works with either
+   model; Large gives the best translations.
 
 4) Transcripts are saved to Documents\Whisper Offline. Click "Open" next to
    "Save transcripts to" to see them, or "Change..." to pick another folder.

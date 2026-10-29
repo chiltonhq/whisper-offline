@@ -28,7 +28,14 @@ from PySide6.QtWidgets import (
 )
 
 from first_run import start_first_run_setup
-from offline_transcribe import SUPPORTED_EXTS, load_model, model_dir_for_quality, process_audio_files, runtime_base_dir
+from offline_transcribe import (
+    DEFAULT_QUALITY,
+    SUPPORTED_EXTS,
+    load_model,
+    model_dir_for_quality,
+    process_audio_files,
+    runtime_base_dir,
+)
 
 THEME_DARK = "#0B0F14"
 THEME_PANEL = "#111926"
@@ -227,13 +234,19 @@ class MainWindow(QMainWindow):
         root.addWidget(separator)
 
         top_controls = QHBoxLayout()
-        quality_label = QLabel("Model quality:")
+        quality_label = QLabel("Model:")
         top_controls.addWidget(quality_label)
         self.quality = QComboBox()
-        self.quality.addItems(["large", "medium"])
+        self.quality.addItem("Large — most accurate, slower", "large")
+        self.quality.addItem("Medium — faster, a little less accurate", "medium")
+        self.quality.setCurrentIndex(self.quality.findData(DEFAULT_QUALITY))
         top_controls.addWidget(self.quality)
         top_controls.addSpacing(20)
-        self.translate_checkbox = QCheckBox("Translate non-English to English")
+        self.translate_checkbox = QCheckBox("Translate non-English speech to English")
+        self.translate_checkbox.setToolTip(
+            "Writes the transcript in English. English speech is kept as is.\n"
+            "Works with either model; Large gives the best translations."
+        )
         top_controls.addWidget(self.translate_checkbox)
         top_controls.addStretch(1)
         root.addLayout(top_controls)
@@ -433,6 +446,11 @@ class MainWindow(QMainWindow):
             QComboBox {{
                 padding: 6px 10px;
             }}
+            QComboBox:disabled {{
+                color: {THEME_MUTED};
+                background: {THEME_DARK};
+                border: 1px dashed {BORDER};
+            }}
             QProgressBar {{
                 background: {PROGRESS_TRACK};
                 border: 1px solid {BORDER};
@@ -556,7 +574,8 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "No Files", "Add at least one audio file first.")
             return
 
-        quality = self.quality.currentText().strip().lower()
+        translate = self.translate_checkbox.isChecked()
+        quality = self.quality.currentData()
         model_dir = model_dir_for_quality(quality)
         if not model_dir:
             self._log(f"Model folder for '{quality}' is missing in this package.")
@@ -572,7 +591,7 @@ class MainWindow(QMainWindow):
             list(self.file_paths),
             quality,
             self.processed_dir,
-            translate=self.translate_checkbox.isChecked(),
+            translate=translate,
             drop_dirs=self.drop_dirs,
         )
         self.worker.log.connect(self._log)

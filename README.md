@@ -13,7 +13,7 @@ Whisper Offline packages OpenAI's [Whisper](https://github.com/openai/whisper) s
 - **100% offline.** No internet is needed or used after download. No telemetry, analytics, or update checks.
 - **Speaker labels.** Detects who is speaking and splits lines at speaker changes:
   `[00:01:12-00:01:18] SPEAKER_01: Thanks for joining us today.`
-- **Two quality levels.** `large` (most accurate) or `medium` (faster).
+- **Two models.** **Large** (Whisper large-v3: most accurate, the default) or **Medium** (faster, a little less accurate).
 - **Multilingual.** Handles mixed-language audio (for example English and Chinese in one file) and can optionally **translate non-English speech into English**.
 - **No install, no admin rights.** Unzip and double-click. Python is not required.
 - **Simple workflow.** Add files or a whole folder, click Start, and open the results folder.
@@ -62,8 +62,8 @@ WhisperOffline\
 
 1. Launch **Whisper Offline** from the desktop icon.
 2. Click **Add Files** or **Add Folder**. Files already in the app's `DropAudioHere` folder are queued automatically.
-3. Choose **Model quality**: `large` for best accuracy, `medium` for speed.
-4. Optionally tick **Translate non-English to English**.
+3. Choose a **Model**: **Large** for the best accuracy, or **Medium** when speed matters more.
+4. To get an English transcript of non-English speech, tick **Translate non-English speech to English**. It works with either model; Large gives the best translations.
 5. Click **Start** and watch the progress bar and log.
 6. Click **Open** next to *Save transcripts to* to see the results.
 
@@ -71,7 +71,7 @@ Transcripts are saved to **`Documents\Whisper Offline`** as `<audio file name>_t
 
 **For IT-managed installs:** to set a default save folder for everyone (for example a network share), put a text file named `output_path.txt` next to `WhisperOffline.exe` containing a single folder path, such as `D:\Transcripts`. A user's own **Change…** choice still takes priority. If a folder can't be used, the app falls back to the next option and says why in the log.
 
-**Speed:** transcription runs on the CPU. As a rough guide, `medium` takes well under the length of the recording on a modern laptop, and `large` takes longer. A fast CPU and an SSD make the biggest difference.
+**Speed:** transcription runs on the CPU (no GPU needed), using one thread per physical core. On a 4-core machine, a recording takes about **1.7×** its length with Large and **1.4×** with Medium, including speaker detection. A 30-minute interview takes roughly 50 or 40 minutes. More physical CPU cores make the biggest difference; Hyper-Threading doesn't help.
 
 ## Privacy: how "offline" is enforced
 
