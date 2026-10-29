@@ -53,17 +53,3 @@ Qt/PySide6 and FFmpeg are LGPL-licensed. They are shipped as separate,
 unmodified dynamic libraries (`.dll` / `.pyd` files under `_internal\`), so you
 may replace them with your own compatible builds. Their source code is available
 from the project pages above.
-
-## Optional NVIDIA GPU add-on
-
-The separate `WhisperOffline-GPU-addon` download (a `gpu` folder) is not part of
-the main app. It contains:
-
-| Component | License | Source |
-|---|---|---|
-| NVIDIA cuBLAS 12.4.5.8 (`cublas64_12.dll`, `cublasLt64_12.dll`) | NVIDIA proprietary (CUDA Toolkit EULA; redistributable runtime library) | https://pypi.org/project/nvidia-cublas-cu12/ |
-| NVIDIA cuDNN 8.9.7.29 (`cudnn64_8.dll`, `cudnn_*_infer64_8.dll`) | NVIDIA proprietary (cuDNN Software License Agreement; redistributable runtime library) | https://pypi.org/project/nvidia-cudnn-cu12/ |
-| zlib 1.3.2 (`zlibwapi.dll`, conda-forge `zlib-wapi` build) | zlib license | https://zlib.net, https://anaconda.org/conda-forge/zlib-wapi |
-
-The add-on ships NVIDIA's license texts and the zlib license in `gpu\licenses\`.
-The NVIDIA libraries are included unmodified, only as part of Whisper Offline.

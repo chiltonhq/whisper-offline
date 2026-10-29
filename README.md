@@ -15,7 +15,6 @@ Whisper Offline packages OpenAI's [Whisper](https://github.com/openai/whisper) s
   `[00:01:12-00:01:18] SPEAKER_01: Thanks for joining us today.`
 - **Two models.** **Large** (Whisper large-v3: most accurate, the default) or **Medium** (faster, a little less accurate).
 - **Multilingual.** Handles mixed-language audio (for example English and Chinese in one file) and can optionally **translate non-English speech into English**.
-- **Optional NVIDIA GPU boost.** A separate GPU add-on lets the app transcribe on an NVIDIA graphics card. Without it, everything runs on the CPU.
 - **No install, no admin rights.** Unzip and double-click. Python is not required.
 - **Simple workflow.** Add files or a whole folder, click Start, and open the results folder.
 - Supports `.mp3`, `.mp4`, `.m4a`, `.wav`, `.webm`, `.mpeg`, `.mpga`.
@@ -27,7 +26,7 @@ Whisper Offline packages OpenAI's [Whisper](https://github.com/openai/whisper) s
 - Windows 10 or 11 (64-bit)
 - 8 GB RAM minimum, 16 GB recommended for the `large` model
 - About 20 GB free disk space during setup, and about 7 GB once installed
-- No GPU required (runs on the CPU). An NVIDIA GPU can be used with the optional add-on below.
+- No GPU required (runs on the CPU)
 
 ### Steps
 
@@ -58,18 +57,6 @@ WhisperOffline\
 > **"Windows protected your PC"?** The app is not code-signed, so Windows SmartScreen may warn you the first time. Click **More info** and then **Run anyway**. You can check your download against `SHA256SUMS.txt` on the release page.
 
 **Installing on a computer with no internet:** do steps 1–4 on any internet-connected PC, then copy the extracted `WhisperOffline` folder to the offline computer (for example on a USB drive) and continue from step 5.
-
-### Optional: NVIDIA GPU add-on
-
-If your PC has an NVIDIA graphics card, the GPU add-on runs the speech-to-text step on the card, which is usually several times faster than the CPU. Speaker detection still runs on the CPU.
-
-- **You need:** an NVIDIA card (GeForce GTX 900 series or newer) and NVIDIA graphics driver 527 or newer. You don't need to install CUDA; the add-on includes it.
-- **Download** `WhisperOffline-GPU-addon-v1.0.zip` (about 1 GB) from the same [Releases](../../releases/latest) page.
-- **Install:** close Whisper Offline, open the zip, and drag the **`gpu`** folder into your `WhisperOffline` folder, next to `WhisperOffline.exe`.
-- **Check:** start the app. The top right says **Runs on: NVIDIA GPU**. If it still says CPU, start a transcription; the first lines of the progress log explain why (for example, no NVIDIA driver). The app always falls back to the CPU, so nothing breaks.
-- **Remove** it by deleting the `gpu` folder.
-
-AMD and Intel graphics aren't supported; the app uses the CPU on those machines.
 
 ## Using Whisper Offline
 
@@ -142,14 +129,6 @@ powershell -ExecutionPolicy Bypass -File package_release.ps1 -Version v1.0
 
 This zips `dist\WhisperOffline`, splits it into parts below GitHub's 2 GB limit, and writes `Combine-WhisperOffline.bat` and `SHA256SUMS.txt` into `release\`. Create a new GitHub Release with tag `v1.0` and upload everything in `release\`. See [BUILD_QUICKSTART.md](BUILD_QUICKSTART.md) for a step-by-step checklist.
 
-**4. Build the GPU add-on (optional)**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File build_gpu_addon.ps1 -Version v1.0
-```
-
-This downloads NVIDIA's cuBLAS 12.4 and cuDNN 8.9.7 runtime libraries from PyPI (about 1.1 GB, pinned by hash in `packaging\gpu-addon-requirements.txt`) and packages the DLLs CTranslate2 needs into `release\WhisperOffline-GPU-addon-<version>.zip`, together with `zlibwapi.dll`, a README and the license files. These versions must match CTranslate2 4.3.1 (CUDA 12, cuDNN 8). If you upgrade CTranslate2, check its CUDA and cuDNN requirements and update the pins. To test it, copy `build\gpu-addon\gpu` into `dist\WhisperOffline\` on a PC with an NVIDIA card, and delete it again before running `package_release.ps1`.
-
 **Running from source (for development):** inside the Conda environment, with models in `models\`, run `python offline_transcribe_gui.py` for the GUI or `python offline_transcribe.py --input-dir <folder>` for the command-line version.
 
 ## Troubleshooting
@@ -211,9 +190,8 @@ You should see exactly one result, at `_internal\libiomp5md.dll`.
 | `whisper_offline.spec` | PyInstaller recipe (bundles models and the icon, de-duplicates the OpenMP runtime) |
 | `build_offline_bundle_windows.bat` | One-command build: environment, preflight, model download, packaging |
 | `package_release.ps1` | Zips and splits the build into GitHub Release files |
-| `build_gpu_addon.ps1` | Builds the optional NVIDIA GPU add-on zip |
 | `first_run.py` | First-launch setup inside the app: shortcuts, clearing Windows' download mark, hiding `_internal` |
-| `packaging/` | `README_FIRST.txt` (copied into every build), and the GPU add-on's README and pinned NVIDIA versions |
+| `packaging/` | `README_FIRST.txt`, copied into every build |
 | `licenses/` | Full license texts for bundled software and models, copied into every build |
 | `collect_licenses.py` | Build step that copies every bundled package's license file into the app |
 | `environment_offline.yml` | Pinned Conda and pip dependencies |
@@ -232,4 +210,3 @@ The download bundles third-party software and models under their own licenses, a
 - pyannote.audio and its diarization and segmentation models (MIT)
 - WeSpeaker embedding model (CC BY 4.0) and SpeechBrain ECAPA model (Apache 2.0)
 - Qt for Python / PySide6 (LGPL v3), PyTorch (BSD), PyAV and FFmpeg (BSD / LGPL)
-- GPU add-on only: NVIDIA cuBLAS and cuDNN, redistributed under NVIDIA's license terms (included in the add-on), and zlib (zlib license)

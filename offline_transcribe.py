@@ -16,59 +16,7 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
-
-def runtime_base_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent
-    return Path(__file__).resolve().parent
-
-
-# Optional GPU add-on: a "gpu" folder next to the app holding NVIDIA's cuBLAS
-# 12 and cuDNN 8.9.7 libraries (built by build_gpu_addon.ps1). The order
-# matters: cudnn64_8.dll must be loaded before ctranslate2 is imported.
-# ctranslate2 ships its own cudnn64_8.dll from an unknown cuDNN 8 build, and
-# cuDNN refuses to mix versions; once a DLL with that name is loaded,
-# ctranslate2.dll binds to it instead of its own copy.
-GPU_ADDON_DIR_NAME = "gpu"
-GPU_ADDON_DLLS = (
-    "zlibwapi.dll",
-    "cudnn64_8.dll",
-    "cudnn_ops_infer64_8.dll",
-    "cudnn_cnn_infer64_8.dll",
-    "cudnn_adv_infer64_8.dll",
-    "cublasLt64_12.dll",
-    "cublas64_12.dll",
-)
-
-
-def _load_gpu_addon() -> tuple[bool, str]:
-    """Preload the GPU add-on's NVIDIA libraries. Returns (ready, reason)."""
-    gpu_dir = runtime_base_dir() / GPU_ADDON_DIR_NAME
-    if sys.platform != "win32" or not gpu_dir.is_dir():
-        return False, ""
-    import ctypes
-
-    try:
-        ctypes.WinDLL("nvcuda.dll")
-    except OSError:
-        return False, "GPU add-on found, but no NVIDIA graphics driver is installed"
-    missing = [name for name in GPU_ADDON_DLLS if not (gpu_dir / name).is_file()]
-    if missing:
-        return False, f"GPU add-on is incomplete (missing {', '.join(missing)}); reinstall it"
-    os.add_dll_directory(str(gpu_dir))
-    os.environ["PATH"] = str(gpu_dir) + os.pathsep + os.environ.get("PATH", "")
-    try:
-        for name in GPU_ADDON_DLLS:
-            ctypes.WinDLL(str(gpu_dir / name))
-    except OSError as exc:
-        return False, f"GPU add-on could not be loaded ({exc})"
-    return True, ""
-
-
-GPU_ADDON_READY, GPU_ADDON_PROBLEM = _load_gpu_addon()
-
-import ctranslate2  # noqa: E402  (must come after the GPU add-on preload)
-from faster_whisper import WhisperModel  # noqa: E402
+from faster_whisper import WhisperModel
 
 SUPPORTED_EXTS = {"mp3", "mp4", "mpeg", "mpga", "m4a", "wav", "webm"}
 MODEL_BY_QUALITY = {
@@ -84,6 +32,12 @@ DIARIZATION_DEPENDENCY_DIRS = {
 }
 MODEL_CANDIDATES = tuple(MODEL_BY_QUALITY.values())
 Logger = Callable[[str], None]
+
+
+def runtime_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    return Path(__file__).resolve().parent
 
 
 def default_model_dir() -> Path | None:
@@ -153,54 +107,13 @@ def default_cpu_threads() -> int:
     return max(1, torch.get_num_threads())
 
 
-def gpu_available() -> bool:
-    """True when the GPU add-on loaded and CUDA can see an NVIDIA GPU."""
-    if not GPU_ADDON_READY:
-        return False
-    try:
-        return ctranslate2.get_cuda_device_count() > 0
-    except Exception:
-        return False
-
-
-def processing_device_summary() -> str:
-    """Short description for the UI, e.g. "NVIDIA GPU" or "CPU"."""
-    return "NVIDIA GPU" if gpu_available() else "CPU"
-
-
-def load_model(
-    model_dir: Path,
-    compute_type: str | None = None,
-    cpu_threads: int | None = None,
-    logger: Logger = print,
-) -> WhisperModel:
-    """Load Whisper on the NVIDIA GPU when the add-on is usable, else on the CPU.
-
-    compute_type defaults to "auto" on the GPU (the fastest type the card
-    supports: float16 on newer cards, int8 or float32 on older ones) and int8
-    on the CPU.
-    """
-    if gpu_available():
-        try:
-            model = WhisperModel(str(model_dir), device="cuda", compute_type=compute_type or "auto")
-            # Run one second of silence through it so a CUDA library problem
-            # shows up here, where we can fall back, rather than mid-file.
-            import numpy as np
-
-            segments, _ = model.transcribe(np.zeros(16000, dtype=np.float32), language="en")
-            list(segments)
-            logger("Using the NVIDIA GPU for transcription.")
-            return model
-        except Exception as exc:
-            logger(f"Could not use the GPU ({exc}). Using the CPU instead.")
-    elif GPU_ADDON_PROBLEM:
-        logger(f"{GPU_ADDON_PROBLEM}. Using the CPU.")
-    elif GPU_ADDON_READY:
-        logger("GPU add-on found, but no NVIDIA GPU was detected. Using the CPU.")
-
-    threads = cpu_threads or default_cpu_threads()
-    logger(f"Using the CPU for transcription ({threads} cores).")
-    return WhisperModel(str(model_dir), device="cpu", compute_type=compute_type or "int8", cpu_threads=threads)
+def load_model(model_dir: Path, compute_type: str = "int8", cpu_threads: int | None = None) -> WhisperModel:
+    return WhisperModel(
+        str(model_dir),
+        device="cpu",
+        compute_type=compute_type,
+        cpu_threads=cpu_threads or default_cpu_threads(),
+    )
 
 
 _SEGMENTATION_WEIGHT_CANDIDATES = (
@@ -711,11 +624,7 @@ def main() -> int:
         help="Translate non-English speech to English",
     )
     parser.add_argument("--language", default=None, help="Optional language code, e.g. en")
-    parser.add_argument(
-        "--compute-type",
-        default=None,
-        help="faster-whisper compute type (default: auto on GPU, int8 on CPU)",
-    )
+    parser.add_argument("--compute-type", default="int8", help="faster-whisper compute type, e.g. int8, float16")
 
     args = parser.parse_args()
 

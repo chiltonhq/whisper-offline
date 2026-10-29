@@ -1,6 +1,0 @@
-# NVIDIA CUDA libraries for the optional GPU add-on (see build_gpu_addon.ps1).
-# CTranslate2 4.3.1 (pinned in environment_offline.yml) is built for CUDA 12
-# and cuDNN 8, so these must stay on cuBLAS 12.x and cuDNN 8.9.x. Pinned by
-# hash so every build packages exactly these files.
-nvidia-cublas-cu12==12.4.5.8 --hash=sha256:5a796786da89203a0657eda402bcdcec6180254a8ac22d72213abc42069522dc
-nvidia-cudnn-cu12==8.9.7.29 --hash=sha256:4447321a2bdc8bd965084c1824575eb04f47a03ab62bbeb6cce7e9f74c3657f3

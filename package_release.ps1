@@ -32,9 +32,6 @@ $zipPath = Join-Path $outDir $zipName
 if (-not (Test-Path -LiteralPath (Join-Path $appDir "WhisperOffline.exe"))) {
     throw "dist\WhisperOffline\WhisperOffline.exe not found. Run build_offline_bundle_windows.bat first."
 }
-if (Test-Path -LiteralPath (Join-Path $appDir "gpu")) {
-    throw "dist\WhisperOffline\gpu exists (probably from testing the GPU add-on). Delete it first: the add-on ships as its own download."
-}
 
 # Drop any per-machine leftovers so they don't ship in the release.
 #   - first_run.py's marker, so every downloader gets first-run setup
@@ -45,12 +42,8 @@ $internal.Attributes = $internal.Attributes -band (-bnot [System.IO.FileAttribut
 Remove-Item -LiteralPath (Join-Path $appDir "processed") -Recurse -Force -ErrorAction SilentlyContinue
 Get-ChildItem -LiteralPath (Join-Path $appDir "DropAudioHere") -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 
-# Clear this script's previous output only, so a GPU add-on zip built by
-# build_gpu_addon.ps1 stays in release\.
-New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-Get-ChildItem -LiteralPath $outDir -File | Where-Object {
-    $_.Name -like "WhisperOffline-$Version.zip*" -or $_.Name -in @("Combine-WhisperOffline.bat", "SHA256SUMS.txt")
-} | Remove-Item -Force
+if (Test-Path -LiteralPath $outDir) { Remove-Item -LiteralPath $outDir -Recurse -Force }
+New-Item -ItemType Directory -Path $outDir | Out-Null
 
 # Zip with .NET (supports files over 2 GB, unlike Compress-Archive on PowerShell 5.1).
 # Keep the empty DropAudioHere folder in the zip by adding a placeholder.
@@ -137,9 +130,9 @@ foreach ($sub in @("DropAudioHere")) {
     Remove-Item -LiteralPath (Join-Path $appDir "$sub\.keep") -ErrorAction SilentlyContinue
 }
 
-# Checksums cover everything in release\, including a GPU add-on zip if present.
-$sums = Get-ChildItem -LiteralPath $outDir -File | Where-Object Name -ne "SHA256SUMS.txt" | Sort-Object Name | ForEach-Object {
-    "$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+$sums = foreach ($name in $assets) {
+    $hash = (Get-FileHash -LiteralPath (Join-Path $outDir $name) -Algorithm SHA256).Hash.ToLower()
+    "$hash  $name"
 }
 Set-Content -LiteralPath (Join-Path $outDir "SHA256SUMS.txt") -Value $sums -Encoding ascii
 

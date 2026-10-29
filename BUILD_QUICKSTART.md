@@ -50,14 +50,6 @@ Output in `release\`:
 - `Combine-WhisperOffline.bat` (joins the parts for downloaders)
 - `SHA256SUMS.txt`
 
-Optionally, build the NVIDIA GPU add-on too (downloads about 1.1 GB of NVIDIA libraries):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File build_gpu_addon.ps1 -Version v1.0
-```
-
-This adds `WhisperOffline-GPU-addon-v1.0.zip` (about 1 GB) to `release\` and refreshes `SHA256SUMS.txt`. If you test it by copying the `gpu` folder into `dist\WhisperOffline`, delete it again before running `package_release.ps1`; the script stops if it finds one.
-
 ## 6) Publish on GitHub
 
 1. On your repository page, go to **Releases** and choose **Draft a new release**.

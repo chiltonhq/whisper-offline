@@ -18,6 +18,3 @@ dev/
 # OS
 Thumbs.db
 .DS_Store
-
-# GPU add-on folder when testing from source (ships separately)
-gpu/
