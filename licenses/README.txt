@@ -2,7 +2,7 @@ LICENSES
 ========
 
 Full license texts for the software and AI models bundled in Whisper Offline.
-Whisper Offline's own code is MIT-licensed (see LICENSE.txt in the app folder).
+Whisper Offline's own code is MIT-licensed (see LICENSE.txt in this folder).
 
 File                         Applies to
 ---------------------------  ----------------------------------------------------

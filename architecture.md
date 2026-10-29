@@ -115,7 +115,7 @@ The `whisper_offline.spec` file is the recipe. Three things to know:
 │  ONLINE BUILDER (Windows) │                │   END-USER PC (offline) │
 │                           │                │                         │
 │  1. conda env update      │                │   1. Unzip bundle       │
-│  2. download 6 models     │                │   2. Run launcher       │
+│  2. download 6 models     │                │   2. Run the .exe       │
 │  3. preflight checks      │ GitHub Release │   3. Drop audio in      │
 │  4. PyInstaller package   │  ───────────▶  │      DropAudioHere/     │
 │  5. package_release.ps1   │                │   4. Read processed/    │
@@ -171,8 +171,8 @@ A short tour of bugs we hit. Each one is a generally-useful lesson:
 - **Mark-of-the-Web is a UX cliff.** Bundles copied across machines or run
   from network shares carry a `Zone.Identifier` ADS that triggers Windows'
   "Open File - Security Warning" dialog on every launch. Every zip downloaded
-  from GitHub gets this mark, so `Start Whisper Offline.bat` runs
-  `Get-ChildItem -Recurse | Unblock-File` once on first launch. Code-signing is
+  from GitHub gets this mark, so on first launch `first_run.py` deletes the
+  `Zone.Identifier` stream from every app file. Code-signing is
   the "real" fix but costs money for a certificate.
 
 **Meta-lesson:** the last 10% of "make it work everywhere" is where you spend 50% of the time.
@@ -199,7 +199,7 @@ If you want to read the code in 10 minutes, in this order:
 | `offline_transcribe_gui.py` | ~470 | Qt UI, file queue, worker thread, header layout, progress bar, output-path resolution |
 | `offline_transcribe.py` | ~510 | Whisper transcription with word timestamps, diarization loading + config rewrite, speaker-change regrouping, output writer |
 | `whisper_offline.spec` | ~125 | PyInstaller recipe (now also bundles `assets/app_icon.png` and embeds `app_icon.ico` into the .exe) |
-| `build_offline_bundle_windows.bat` | ~90 | Build orchestration (copies the `launcher/` files, LICENSE and notices into each bundle) |
+| `build_offline_bundle_windows.bat` | ~90 | Build orchestration (copies `packaging/README_FIRST.txt`, the licenses and notices into each bundle) |
 | `package_release.ps1` | ~130 | Zips the bundle and splits it into <2 GB parts for GitHub Releases |
 | `assets/make_icon.py` | ~50 | One-shot generator for the waveform app icon (run once at dev time) |
 | `environment_offline.yml` | ~20 | Pinned dependencies |
@@ -223,11 +223,14 @@ rebuilding:
   file (caught by the existing per-file try/except) until the user
   restarts.
 
-- **`Start Whisper Offline.bat`** (from `launcher/`, copied in by the build)
-  On first run it clears the Mark-of-the-Web flag from every file, then it
-  creates or refreshes the desktop shortcut and launches the `.exe`. Not a
-  config file in the strict sense but the easiest place for site
-  customizations (network-drive mapping preflight, etc.).
+- **First-run setup** (`first_run.py`, runs inside `WhisperOffline.exe`)
+  On first launch, in a background thread, it clears the Mark-of-the-Web flag
+  from every file, hides `_internal\` so the app folder only shows what users
+  need, and adds Desktop and Start menu shortcuts. A marker file
+  (`_internal\.setup_done`) holds the exe path, so setup reruns only if the
+  folder moves, and a shortcut the user deleted isn't re-created every launch.
+  This replaced an earlier launcher `.bat`, which gave users two things to
+  double-click and could be run by mistake from the source repo.
 
 ---
 

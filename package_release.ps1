@@ -34,7 +34,11 @@ if (-not (Test-Path -LiteralPath (Join-Path $appDir "WhisperOffline.exe"))) {
 }
 
 # Drop any per-machine leftovers so they don't ship in the release.
-Remove-Item -LiteralPath (Join-Path $appDir "_internal\.unblocked") -ErrorAction SilentlyContinue
+#   - first_run.py's marker, so every downloader gets first-run setup
+#   - the hidden flag first_run.py puts on _internal after a test launch
+Remove-Item -LiteralPath (Join-Path $appDir "_internal\.setup_done") -Force -ErrorAction SilentlyContinue
+$internal = Get-Item -LiteralPath (Join-Path $appDir "_internal") -Force
+$internal.Attributes = $internal.Attributes -band (-bnot [System.IO.FileAttributes]::Hidden)
 Get-ChildItem -LiteralPath (Join-Path $appDir "processed") -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 Get-ChildItem -LiteralPath (Join-Path $appDir "DropAudioHere") -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 

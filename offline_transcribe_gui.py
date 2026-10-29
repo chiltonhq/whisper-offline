@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from first_run import start_first_run_setup
 from offline_transcribe import SUPPORTED_EXTS, load_model, model_dir_for_quality, process_audio_files, runtime_base_dir
 
 THEME_DARK = "#0B0F14"
@@ -536,6 +537,7 @@ def main() -> int:
     if icon_path is not None:
         window.setWindowIcon(QIcon(str(icon_path)))
     window.show()
+    start_first_run_setup()
     return app.exec()
 
 

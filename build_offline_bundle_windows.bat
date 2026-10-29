@@ -75,11 +75,10 @@ if errorlevel 1 exit /b 1
 set "APP=dist\WhisperOffline"
 mkdir "%APP%\DropAudioHere" 2>nul
 mkdir "%APP%\processed" 2>nul
-copy /y "launcher\Start Whisper Offline.bat" "%APP%\" >nul
-copy /y "launcher\README_FIRST.txt" "%APP%\" >nul
-copy /y LICENSE "%APP%\LICENSE.txt" >nul
-copy /y THIRD_PARTY_NOTICES.md "%APP%\THIRD_PARTY_NOTICES.txt" >nul
+copy /y "packaging\README_FIRST.txt" "%APP%\" >nul
 xcopy /e /i /y /q licenses "%APP%\licenses" >nul
+copy /y LICENSE "%APP%\licenses\LICENSE.txt" >nul
+copy /y THIRD_PARTY_NOTICES.md "%APP%\licenses\THIRD_PARTY_NOTICES.txt" >nul
 call conda run -n "%ENV_NAME%" python collect_licenses.py "%APP%\licenses\packages"
 if errorlevel 1 (
   echo WARNING: could not collect package license files into %APP%\licenses\packages.

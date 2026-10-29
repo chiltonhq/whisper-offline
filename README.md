@@ -2,6 +2,8 @@
 
 **Private, fully offline audio transcription for Windows.** Drop in a recording and get back a timestamped transcript with speaker labels. Everything runs on your own computer, with no internet connection, no account, no cloud upload, and no subscription.
 
+> **Just want to use it?** Skip the code on this page and go to [**Download and install**](#download-and-install). The app comes from the [Releases](../../releases/latest) page, not from the green *Code* button.
+
 <!-- Screenshot: save one as docs/screenshot.png, then replace this comment with: ![Whisper Offline](docs/screenshot.png) -->
 
 Whisper Offline packages OpenAI's [Whisper](https://github.com/openai/whisper) speech recognition model (through [faster-whisper](https://github.com/SYSTRAN/faster-whisper)) and [pyannote](https://github.com/pyannote/pyannote-audio) speaker diarization into a single Windows folder. All the AI models are included in the download, so it works on air-gapped and locked-down machines, and your audio never leaves your computer.
@@ -37,8 +39,21 @@ The app is about 7 GB because the AI models are included. GitHub limits each dow
 3. Double-click **`Combine-WhisperOffline.bat`**. It joins the parts into `WhisperOffline-v1.0.zip`.
    *(If you have [7-Zip](https://www.7-zip.org/) installed, you can open `.zip.001` directly instead.)*
 4. Right-click `WhisperOffline-v1.0.zip` and choose **Extract All...**. Extract it somewhere with a short path, such as `C:\WhisperOffline`.
-5. Open the extracted `WhisperOffline` folder and double-click **`Start Whisper Offline.bat`**.
-   The first launch takes about a minute to prepare, then puts a **Whisper Offline** icon on your desktop.
+5. Open the extracted `WhisperOffline` folder and double-click **`WhisperOffline.exe`**.
+   The first launch adds **Whisper Offline** to your desktop and Start menu. Use those from then on.
+
+The extracted folder is kept simple:
+
+```
+WhisperOffline\
+  WhisperOffline.exe    <- double-click this
+  README_FIRST.txt      quick-start guide
+  DropAudioHere\        optional: audio placed here is queued at startup
+  processed\            your transcripts appear here
+  licenses\             open-source licenses
+```
+
+(A hidden `_internal` folder holds the app's engine and AI models. Leave it where it is.)
 
 > **"Windows protected your PC"?** The app is not code-signed, so Windows SmartScreen may warn you the first time. Click **More info** and then **Run anyway**. You can check your download against `SHA256SUMS.txt` on the release page.
 
@@ -123,7 +138,9 @@ This zips `dist\WhisperOffline`, splits it into parts below GitHub's 2 GB limit,
 
 **The app closes or nothing happens when I double-click.** Make sure you extracted the *whole* zip, not just a file opened from inside it. Then try running `WhisperOffline.exe` directly from the folder.
 
-**A security warning appears every launch.** Windows marks downloaded files as "from the internet". The launcher clears that mark on first run. If you skipped the launcher, right-click the downloaded `.zip` before extracting, choose **Properties**, tick **Unblock**, then extract again.
+**A security warning appears every launch.** Windows marks downloaded files as "from the internet". The app clears that mark the first time it runs, so the warning should stop after the first launch. If it doesn't, right-click the downloaded `.zip` before extracting, choose **Properties**, tick **Unblock**, then extract again.
+
+**The desktop or Start menu shortcut stopped working.** You probably moved the folder. Double-click `WhisperOffline.exe` in its new location once and the shortcuts update.
 
 **"Combine" says a part is missing.** Download every `.zip.0##` file from the release into the same folder as `Combine-WhisperOffline.bat`.
 
@@ -174,7 +191,8 @@ You should see exactly one result, at `_internal\libiomp5md.dll`.
 | `whisper_offline.spec` | PyInstaller recipe (bundles models and the icon, de-duplicates the OpenMP runtime) |
 | `build_offline_bundle_windows.bat` | One-command build: environment, preflight, model download, packaging |
 | `package_release.ps1` | Zips and splits the build into GitHub Release files |
-| `launcher/` | `Start Whisper Offline.bat` and `README_FIRST.txt`, copied into every build |
+| `first_run.py` | First-launch setup inside the app: shortcuts, clearing Windows' download mark, hiding `_internal` |
+| `packaging/` | `README_FIRST.txt`, copied into every build |
 | `licenses/` | Full license texts for bundled software and models, copied into every build |
 | `collect_licenses.py` | Build step that copies every bundled package's license file into the app |
 | `environment_offline.yml` | Pinned Conda and pip dependencies |
