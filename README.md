@@ -65,7 +65,7 @@ WhisperOffline\
 3. Choose a **Model**: **Large** for the best accuracy, or **Medium** when speed matters more.
 4. To get an English transcript of non-English speech, tick **Translate non-English speech to English**. It works with either model; Large gives the best translations.
 5. Click **Start** and watch the progress bar and log.
-6. Click **Open** next to *Save transcripts to* to see the results.
+6. Click **Open** to see the results.
 
 Transcripts are saved to **`Documents\Whisper Offline`** as `<audio file name>_transcription.txt`. To save them somewhere else, click **Change…**; the app remembers your choice. Your original audio files are left where they are. The exception is files from `DropAudioHere`, which are moved into the transcripts folder when done so they aren't queued again.
 
